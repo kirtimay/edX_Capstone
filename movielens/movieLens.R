@@ -48,6 +48,22 @@ edx <- rbind(edx, removed) #edx is training set
 
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
+#Splitting the edx dataset into a train set and test set using p=0.1
+set.seed(1, sample.kind="Rounding")
+test_index <- createDataPartition(y = edx$rating, times = 1, p = 0.1, list = FALSE)
+train_set <- edx[-test_index,]
+temp <- edx[test_index,]
+
+#To ensure userId and movieId in the test set are also in the train set
+test_set <- temp %>% 
+  semi_join(train_set, by = "movieId") %>%
+  semi_join(train_set, by = "userId")
+
+#Adding rows removed from the test set back into the train set
+removed <- anti_join(temp, test_set)
+train_set <- rbind(train_set, removed)
+rm(test_index, temp, removed)
+
 ################################
 # 2. Exploratory Data Analysis
 ################################
