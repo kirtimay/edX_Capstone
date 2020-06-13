@@ -2,8 +2,12 @@
 title: "MovieLens Project Submission"
 author: "Kirtimay Pendse"
 date: "6/9/2020"
-output: pdf_document
----
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true #need to change this section; not working rn
+------
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -23,6 +27,7 @@ The algorithm's performance is evaluated using the RMSE, a measure of the differ
 $$ RMSE = \sqrt{\frac{1}{N}\displaystyle\sum_{u,i} (\hat{y}_{u,i}-y_{u,i})^{2}} $$
 
 An 'accurate' model entails obtaining an RMSE of < 0.86490, and RMSE is the value used to calculcate the accuracy/effectiveness of the different models created. 
+
 ```{r RMSE, echo = FALSE}
 RMSE <- function(predicted_ratings, true_ratings){
   sqrt(mean((predicted_ratings - true_ratings)^2))
@@ -36,7 +41,19 @@ RMSE <- function(predicted_ratings, true_ratings){
 First, the dataset is downloaded from the MovieLens website and split into a training set (the 'edx' set) and a 'validation' set. The 'edx' dataset is further split into a train set and a test set, and is used to create the prediction algorithm. Once the desired RMSE is reached, the model is tested on the 'validation' dataset for the final analysis. 
 
 
-```{r data prep, echo=FALSE}
+```{r, data prep, echo = TRUE, message = FALSE, warning = FALSE, eval = TRUE}
+
+#Loading required packages
+library(lubridate)
+if(!require(ggthemes)) 
+  install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(scales)) 
+  install.packages("scales", repos = "http://cran.us.r-project.org")
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(dslabs)
+library(lubridate)
 
 #The following code was given by the edX staff
 
@@ -82,7 +99,7 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 The 'edx' dataset was split into a train set (90% of the data in edx) and a test set (10% of the data in edx) using the following code:
 
-```{r edx, echo=FALSE, warning=FALSE}
+```{r edx, echo=FALSE, warning=FALSE, message = FALSE, eval = TRUE}
 set.seed(1, sample.kind="Rounding")
 test_index <- createDataPartition(y = edx$rating, times = 1, p = 0.1, list = FALSE)
 train_set <- edx[-test_index,]
@@ -101,7 +118,111 @@ rm(test_index, temp, removed)
 
 ##Exploratory Analysis
 
-##Building Models
+For the initial data exploration, the head() function was used to get an overall 'feel' for the data.
+
+```{r head, echo=FALSE}
+head(edx) %>% print.data.frame() #to inspect the data briefly, and get a 'feel'
+```
+
+From the data frame above, it's observed that the dataset contains 6 variables, with each user and movie having a unique user ID and movie ID respectively, along with a rating assigned to each user-movie pair, and a timestamp. It's also evident that the title of each movie has the year in brackets, and multiple genres can be assigned to a movie. 
+
+Then, the class for each variable was determined.
+
+```{r sapply, echo=FALSE}
+sapply(edx, class) #ascertain the class of each variable
+```
+
+It's observed that 'userId' and 'timestamp' are integers, 'movieId' and 'rating' are numeric, and 'title' and 'genres' are characters. 
+
+A summary of the edx dataset was also determined:
+
+```{r summary, echo=FALSE}
+summary(edx) #get summary stats for the individual variables
+```
+
+The initial observations made from the table above are that the mean rating is around 3.5, indicating a possibility that most users tend to rate movies slightly higher, and that there doesn't seem to be any missing values.
+
+## Univariate Plots
+
+The following section inspects the variables in more detail through some plots.
+
+### Date
+
+From the plot below, it's evident that the movies with the most ratings came out in 2000 and then 2005. As expected, the movies released most recently tend to have fewer ratings, but there are a few years (such as 1997 and 2002) where movies have fewer ratings. 
+
+```{r date, echo=FALSE}
+edx %>% mutate(year = year(as_datetime(timestamp, origin="1970-01-01"))) %>%
+  ggplot(aes(x=year)) +
+  geom_histogram(color = "black", bins = 30) + 
+  ggtitle("Distribution of Ratings per Year") +
+  xlab("Year") +
+  ylab("# Ratings") +
+  scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+### Movies (rephrase this all)
+
+We can observe that some movies have been rated moch often that other, while some have very few  ratings and sometimes only one rating. This will be important for our model as very low rating numbers might results in untrustworthy estimate for our predictions. In fact 125 movies have been rated only once. 
+
+Thus regularisation and a penalty term will be applied to the models in this project. Regularizations are techniques used to reduce the error by fitting a function appropriately on the given training set and avoid overfitting (the production of an analysis that corresponds too closely or exactly to a particular set of data, and may therefore fail to fit additional data or predict future observations reliably). Regularization is a technique used for tuning the function by adding an additional penalty term in the error function. The additional term controls the excessively fluctuating function such that the coefficients don’t take extreme values.
+
+
+```{r movies, echo=FALSE}
+edx %>% group_by(movieId) %>%
+  summarise(n=n()) %>%
+  ggplot(aes(n)) +
+  geom_histogram(color = "black", bins = 30) +
+  scale_x_log10() + 
+  ggtitle("Distribution of Movies") +
+  xlab("# Ratings") +
+  ylab("# Movies")
+```
+
+```{r rated_movies, echo=FALSE}
+edx %>% mutate(date = date(as_datetime(timestamp, origin="1970-01-01"))) %>%
+  group_by(date, title) %>%
+  summarise(count = n()) %>%
+  arrange(-count) %>%
+  head(7)
+```
+
+### Users (to rephrase)
+
+We can observe that the majority of users have rated between 30 and 100 movies. So, a user penalty term need to be included later in our models.
+
+
+```{r users, echo=FALSE}
+edx %>% group_by(userId) %>%
+  summarise(n=n()) %>%
+  ggplot(aes(n)) +
+  geom_histogram(color = "black", bins = 30) +
+  scale_x_log10() + 
+  ggtitle("Distribution of Users") +
+  xlab("# Ratings") +
+  ylab("# Users") + 
+  scale_y_continuous(labels = comma) 
+```
+
+### Ratings (to rephrase)
+
+Users have a preference to rate movies rather higher than lower as shown by the distribution of ratings below. 4 is the most common rating, followed by 3 and 5. 0.5 is the least common rating. In general, half rating are less common than whole star ratings.
+
+```{r ratings, echo=FALSE}
+edx %>% group_by(rating) %>% 
+  summarise(count=n()) %>%
+  ggplot(aes(x=rating, y=count)) + 
+  geom_line() +
+  geom_point() +
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  ggtitle("Distribution of Ratings") + 
+  xlab("Rating") +
+  ylab("Count") 
+```
+
+##Building Models (need to rephrase)
 
 Creating a recommendation system involves the identification of the most important features that helps to predict the rating any given user will give to any movie. We start building a very simple model, which is just the mean of the observed values. Then, the user and movie effects are included in the linear model, improving the RMSE. Finally, the user and movie effects receive regularization parameter that penalizes samples with few ratings.
 
