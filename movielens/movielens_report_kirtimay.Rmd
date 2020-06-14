@@ -2,15 +2,12 @@
 title: "MovieLens Project Submission"
 author: "Kirtimay Pendse"
 date: "6/9/2020"
-output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true #need to change this section; not working rn
-------
+output: pdf_document
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(digits=6)
 ```
 
 # Introduction
@@ -28,15 +25,9 @@ $$ RMSE = \sqrt{\frac{1}{N}\displaystyle\sum_{u,i} (\hat{y}_{u,i}-y_{u,i})^{2}} 
 
 An 'accurate' model entails obtaining an RMSE of < 0.86490, and RMSE is the value used to calculcate the accuracy/effectiveness of the different models created. 
 
-```{r RMSE, echo = FALSE}
-RMSE <- function(predicted_ratings, true_ratings){
-  sqrt(mean((predicted_ratings - true_ratings)^2))
-}
-```
-
 # Methods and Analysis
 
-##Preparing the data
+## Preparing the data
 
 First, the dataset is downloaded from the MovieLens website and split into a training set (the 'edx' set) and a 'validation' set. The 'edx' dataset is further split into a train set and a test set, and is used to create the prediction algorithm. Once the desired RMSE is reached, the model is tested on the 'validation' dataset for the final analysis. 
 
@@ -97,7 +88,7 @@ edx <- rbind(edx, removed) #edx is training set
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 ```
 
-The 'edx' dataset was split into a train set (90% of the data in edx) and a test set (10% of the data in edx) using the following code:
+The 'edx' dataset was split into a train set (90% of the data in edx) and a test set (10% of the data in edx) using the following code-
 
 ```{r edx, echo=FALSE, warning=FALSE, message = FALSE, eval = TRUE}
 set.seed(1, sample.kind="Rounding")
@@ -116,7 +107,7 @@ train_set <- rbind(train_set, removed)
 rm(test_index, temp, removed)
 ```
 
-##Exploratory Analysis
+## Exploratory Analysis
 
 For the initial data exploration, the head() function was used to get an overall 'feel' for the data.
 
@@ -150,7 +141,8 @@ The following section inspects the variables in more detail through some plots.
 
 From the plot below, it's evident that the movies with the most ratings came out in 2000 and then 2005. As expected, the movies released most recently tend to have fewer ratings, but there are a few years (such as 1997 and 2002) where movies have fewer ratings. 
 
-```{r date, echo=FALSE}
+```{r date, echo=FALSE} 
+#in the line above, can add fig.height = ? or fig.width= ? to specify things
 edx %>% mutate(year = year(as_datetime(timestamp, origin="1970-01-01"))) %>%
   ggplot(aes(x=year)) +
   geom_histogram(color = "black", bins = 30) + 
@@ -162,12 +154,9 @@ edx %>% mutate(year = year(as_datetime(timestamp, origin="1970-01-01"))) %>%
 ```
 
 
-### Movies (rephrase this all)
+### Movies 
 
-We can observe that some movies have been rated moch often that other, while some have very few  ratings and sometimes only one rating. This will be important for our model as very low rating numbers might results in untrustworthy estimate for our predictions. In fact 125 movies have been rated only once. 
-
-Thus regularisation and a penalty term will be applied to the models in this project. Regularizations are techniques used to reduce the error by fitting a function appropriately on the given training set and avoid overfitting (the production of an analysis that corresponds too closely or exactly to a particular set of data, and may therefore fail to fit additional data or predict future observations reliably). Regularization is a technique used for tuning the function by adding an additional penalty term in the error function. The additional term controls the excessively fluctuating function such that the coefficients don’t take extreme values.
-
+In the plot below, it can be seen that some movies are rated much more frequently than others, and that there's a few movies with as few as one rating. In the models created in subsequent sections, it's important to note that these low ratings could result in faulty estimates for the predictions made by the model.  
 
 ```{r movies, echo=FALSE}
 edx %>% group_by(movieId) %>%
@@ -177,21 +166,13 @@ edx %>% group_by(movieId) %>%
   scale_x_log10() + 
   ggtitle("Distribution of Movies") +
   xlab("# Ratings") +
-  ylab("# Movies")
+  ylab("# Movies") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-```{r rated_movies, echo=FALSE}
-edx %>% mutate(date = date(as_datetime(timestamp, origin="1970-01-01"))) %>%
-  group_by(date, title) %>%
-  summarise(count = n()) %>%
-  arrange(-count) %>%
-  head(7)
-```
+### Users 
 
-### Users (to rephrase)
-
-We can observe that the majority of users have rated between 30 and 100 movies. So, a user penalty term need to be included later in our models.
-
+In the plot below, it's evident that most of the users have rated between 40 to 110 movies, and some users are very active and have rated in numbers close to a thousand. This highlights the importance of adding a user effects term in the models built in the next section.
 
 ```{r users, echo=FALSE}
 edx %>% group_by(userId) %>%
@@ -202,12 +183,13 @@ edx %>% group_by(userId) %>%
   ggtitle("Distribution of Users") +
   xlab("# Ratings") +
   ylab("# Users") + 
-  scale_y_continuous(labels = comma) 
+  scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-### Ratings (to rephrase)
+### Ratings 
 
-Users have a preference to rate movies rather higher than lower as shown by the distribution of ratings below. 4 is the most common rating, followed by 3 and 5. 0.5 is the least common rating. In general, half rating are less common than whole star ratings.
+As highlighted in the summary statistics and the graph below, users tend to be more positive than critical while rating movies. 4, 3, and 5 (in that order) are the most common ratings given, and half point ratings are not as common as whole numbers. 0.5 is the rating least commonly assigned to a movie.
 
 ```{r ratings, echo=FALSE}
 edx %>% group_by(rating) %>% 
@@ -222,7 +204,241 @@ edx %>% group_by(rating) %>%
   ylab("Count") 
 ```
 
-##Building Models (need to rephrase)
+cheeky heatmap here maybe?
 
-Creating a recommendation system involves the identification of the most important features that helps to predict the rating any given user will give to any movie. We start building a very simple model, which is just the mean of the observed values. Then, the user and movie effects are included in the linear model, improving the RMSE. Finally, the user and movie effects receive regularization parameter that penalizes samples with few ratings.
+## Modeling
+
+To build an efficient recomemndation system algorithm, the most important features that would help predict a user's rating need to be identified. This section starts off with a model that randomly predicts a user's rating based on the observed probabilities in the training subset of the edx dataset, followed by a simple model built around the mean of the observed values, following which three linear models are built- one accounting for user effects, one accounting for movie effects, and one accounting for both movie and user effects. Then, a regularization parameter is added to the movie and user effects model, and a final model using matrix factorization is built. As mentioned earlier, RMSE values are used to evaluate each model's performance.
+
+The RMSE is calculcated using the following code:
+
+```{r RMSE, echo = TRUE}
+RMSE <- function(predicted_ratings, true_ratings){
+  sqrt(mean((predicted_ratings - true_ratings)^2))
+}
+```
+
+### Predicting Randomly
+
+In this simple model, user ratings are randomly predicted using the observed probabilities in the training subset of the edx dataset. After calculcating the probability of each rating, the model predicts ratings for the test subset and the RMSE compares the predictions with the actual rating. This model should produce the worst RMSE of all models generated, and mostly serves as a stepping stone towards creating a more accurate model. This model uses a Monte Carlo simulation to approximate the rating distribution, since the real distribution of ratings for the entire population is unknown. 
+
+```{r random, message=FALSE, warning=FALSE}
+set.seed(43, sample.kind = "Rounding")
+
+#To create a probability distribution of each rating
+p <- function(x, y) mean(y == x)
+rating <- seq(0.5,5,0.5)
+
+#Using a MC simulation to estimate the probability
+B <- 10000
+M <- replicate(B, {
+  z <- sample(train_set$rating, 100, replace = T)
+  sapply(rating, p, y=z)
+})
+prob_1 <- sapply(1:nrow(M), function(x) mean(M[x,]))
+
+#To randomly predict ratings
+y_hat <- sample(rating, size = nrow(test_set), 
+                       replace = TRUE, prob = prob_1)
+
+#Store results in a table
+results_table <- tibble('Method of Analysis' = "Desired RMSE", RMSE = 0.8649)
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis' = "Predicting Randomly", 
+                           RMSE = RMSE(test_set$rating, y_hat)))
+results_table
+```
+
+The RMSE of this model is extremely high, almost 1.5, and the following models would bring the value down closer to the desired RMSE. 
+
+### Building Linear Models
+
+1. The Average Rating Model
+The first linear model is centered around the idea that users will ascribe the same rating to all movies, and that variation within movies is accounted in a randomly distributed error term. This can be written as the following equation:
+
+$$\hat Y_{u,i}=\mu+\epsilon_{i,u}$$
+
+$\hat Y$ represents the predicted user rating, $\mu$ represents the mean of the observed data (since the average minimizes RMSE, this model uses the predicted rating as the mean of observed ratings), and $\epsilon_{i,u}$ is an error term.
+
+```{r}
+#Calculating the mean of observed values in the train_set
+mu <- mean(train_set$rating)
+
+#Adding the results to the RMSE table  
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis'= "Using the Average Rating", 
+                           RMSE = RMSE(test_set$rating, mu)))
+results_table
+```
+
+Using $\mu$ as the prediction for user ratings significantly lowers the RMSE value from randomly predicting, but is still too large compared to the desired RMSE.
+
+2. Including User Effects
+
+Users tend to have different rating distributions; for instance, some users may like most of the movies they rate and consistently give them high ratings, whereas some users could be more critical and give movies lower ratings. The user effect ($b_u$) can be captured through this linear model:
+
+$$\hat Y_{u,i}=\mu + b_u + \epsilon_{i,u}$$
+
+```{r}
+#Calculating bu (the user effect)
+bu <- train_set %>% 
+  left_join(bi, by = 'movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u = mean(rating - mu - b_i))
+
+#Predicting user rating with mean & bu  
+y_hat_bu <- mu + test_set %>% 
+  left_join(bu, by = "userId") %>% 
+  .$b_u
+
+#Add the results
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis'= "Including User Effect", 
+                           RMSE = RMSE(test_set$rating, y_hat_bu)))
+results_table
+```
+
+Including the user effect lowered the RMSE from 1.06 to 0.993.
+
+3. Including Movie Effects.
+
+Similar to the user effect, variability within movies can be explained through different rating distributions for different movies; intuitively speaking this makes sense, as some movies are very popular and garner huge public support, whereas some artsy, independent movies have limited support, and might have lower ratings due to being 'unpopular'. The following equation highlights a linear model accounting for the movie effect ($b_i$:
+
+$$\hat Y_{u,i}=\mu + b_i + \epsilon_{i,u}$$
+
+```{r}
+#Calculating bi (the movie effect)
+bi <- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = mean(rating - mu))
+
+#Predicting user rating with mean & bi  
+y_hat_bi <- mu + test_set %>% 
+  left_join(bi, by = "movieId") %>% 
+  .$b_i
+
+#Add the results
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis' = "Including Movie Effect", 
+                           RMSE = RMSE(test_set$rating, y_hat_bi)))
+results_table
+```
+
+Including the movie effect reduced the RMSE to 0.943.
+
+4. Including User and Movie Effects
+
+A more accurate model would account for both user and movie effects, and can be written as the following equation:
+
+$$\hat Y_{u,i}=\mu+b_i+b_u+\epsilon_{u,i}$$ 
+
+```{r}
+#Predicting user rating with mu, bi and bu
+y_hat_bi_bu <- test_set %>% 
+  left_join(bi, by='movieId') %>%
+  left_join(bu, by='userId') %>%
+  mutate(pred = mu + b_i + b_u) %>%
+  .$pred
+
+#Add the results
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis' = "Including Movie and User Effects", 
+                           RMSE = RMSE(test_set$rating, y_hat_bi_bu)))
+results_table
+```
+
+Including both movie and user effects significantly lowered the RMSE to 0.865.
+
+### Using Regularization
+
+The linear models created above provided reasonable user rating predictions, but fail to account for the fact that many movies have a small number of ratings, and that some users have rated a very small number of movies. Having these small sample sizes for movie-user combinations can lead to large estimated errors, and so a penalty term should be added. Regularization, a form of regression that 'regularizes' (constrains) estimates to zero, allows for penalizing these small sample sizes and also helps in avoiding overfitting (creating an algorithm that functions extremely well on a training set but doesn't generalize well on additional data).
+
+To regularize movie and user effects, a penalty term $\lambda$ is used; $\lambda$ can be thought of as a tuning parameter, and so can be ascribed a range of values from which the best value (the one that minimizes RMSE) will be picked. 
+
+
+```{r lambdas, echo = TRUE}
+lambdas <- seq(0, 10, 0.25)
+rmses <- sapply(lambdas, function(l){
+  
+b_i <- train_set %>% 
+    group_by(movieId) %>%
+    summarize(b_i = sum(rating - mu)/(n()+l))
+  
+b_u <- train_set %>% 
+    left_join(b_i, by="movieId") %>%
+    group_by(userId) %>%
+    summarize(b_u = sum(rating - b_i - mu)/(n()+l))
+  
+predicted_ratings <- 
+    test_set %>% 
+    left_join(b_i, by = "movieId") %>%
+    left_join(b_u, by = "userId") %>%
+    mutate(pred = mu + b_i + b_u) %>%
+    pull(pred)
+  
+  return(RMSE(predicted_ratings, test_set$rating))
+})
+```
+
+The optimal value of $\lambda$ is 5; this is the value that is used to shrink the estimates $b_{i}$ and $b_{u}$ in case of a small movie-user combination sample size.
+
+```{r min_lambda, echo = TRUE}
+lambda <- lambdas[which.min(rmses)]
+lambda
+
+#This can be confirmed via the following plot as well:
+qplot(lambdas, rmses)  
+```
+
+$\lambda$ is then added to the movie and user effect linear model.
+
+```{r}
+#Predict a regularized estimate of y_hat
+reg_y_hat <- test_set %>% 
+  left_join(b_u, by = "userId") %>%
+  left_join(b_i, by = "movieId") %>%
+  mutate(pred = mu + b_u + b_i) %>%
+  pull(pred)
+# Update the result table
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis' = "Regularization", 
+                           RMSE = RMSE(test_set$rating, reg_y_hat)))
+results_table
+```
+
+### Matrix Factorization
+
+## Final Validation
+
+```{r final_valid, message=FALSE, warning=FALSE}
+mu_edx <- mean(edx$rating)
+# Movie effect (bi)
+b_i_edx <- edx %>% 
+  group_by(movieId) %>%
+  summarize(b_i = sum(rating - mu_edx)/(n()+lambda))
+# User effect (bu)
+b_u_edx <- edx %>% 
+  left_join(b_i_edx, by="movieId") %>%
+  group_by(userId) %>%
+  summarize(b_u = sum(rating - b_i - mu_edx)/(n()+lambda))
+# Prediction
+y_hat_edx <- validation %>% 
+  left_join(b_i_edx, by = "movieId") %>%
+  left_join(b_u_edx, by = "userId") %>%
+  mutate(pred = mu_edx + b_i + b_u) %>%
+  pull(pred)
+# Update the results table
+results_table <- bind_rows(results_table, 
+                    tibble('Method of Analysis' = "Regularized Movie and User Effects- Final Validation", 
+                           RMSE = RMSE(validation$rating, y_hat_edx)))
+# Show the RMSE improvement
+results_table 
+```
+
+# Conclusion
+
+## Limitations
+
+## Future Work
+
 

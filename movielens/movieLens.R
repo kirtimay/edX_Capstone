@@ -7,12 +7,8 @@
 # 1. Create edx set, validation set 
 ################################
 
-#(the following code was given by the edX staff)
-# Note: this process could take a couple of minutes
-
-if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
-if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
-if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+#Loading required packages
+library(lubridate)
 if(!require(ggthemes)) 
   install.packages("ggthemes", repos = "http://cran.us.r-project.org")
 if(!require(scales)) 
@@ -22,6 +18,14 @@ library(knitr)
 library(ggplot2)
 library(dslabs)
 library(lubridate)
+
+
+#(the following code was given by the edX staff)
+# Note: this process could take a couple of minutes
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 
 # MovieLens 10M dataset:
 # https://grouplens.org/datasets/movielens/10m/
@@ -91,10 +95,11 @@ summary(edx) #get summary stats for the individual variables
 edx %>% mutate(year = year(as_datetime(timestamp, origin="1970-01-01"))) %>%
   ggplot(aes(x=year)) +
   geom_histogram(color = "black", bins = 30) + 
-  ggtitle("Distribution of Ratings across Years") +
+  ggtitle("Distribution of Ratings per Year") +
   xlab("Year") +
   ylab("# Ratings") +
-  scale_y_continuous(labels = comma) 
+  scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(hjust = 0.5))
 
 #Movies
 
@@ -105,7 +110,7 @@ edx %>% group_by(movieId) %>%
   scale_x_log10() + 
   ggtitle("Distribution of Movies") +
   xlab("# Ratings") +
-  ylab("# Movies") 
+  ylab("# Movies")
 
 #Users
 
@@ -142,20 +147,6 @@ RMSE <- function(true_ratings, predicted_ratings){
   sqrt(mean((true_ratings - predicted_ratings)^2))
 }
 
-## Average movie rating model ##
-
-# Compute the dataset's mean rating
-mu <- mean(edx$rating)
-mu
-
-# Test results based on simple prediction
-naive_rmse <- RMSE(validation$rating, mu)
-naive_rmse
-
-# Check results
-# Save prediction in data frame
-rmse_results <- data_frame(method = "Average movie rating model", RMSE = naive_rmse)
-rmse_results %>% knitr::kable()
 
 
 
