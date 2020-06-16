@@ -259,7 +259,7 @@ results_table
 
 #Regularization
 
-#finding optimal lambda
+#finding optimal lambda (takes a while to run)
 lambdas <- seq(0, 10, 0.25)
 rmses <- sapply(lambdas, function(l){
   
