@@ -1,0 +1,50 @@
+---
+title: "Predicting Diabetes in PIMA Women"
+subtitle: "edX Capstone Project Submission"
+author: "Kirtimay Pendse"
+date: "6/15/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits=6)
+```
+
+# Introduction
+
+```{r, data prep, echo = TRUE, message = FALSE, warning = FALSE, eval = TRUE}
+#Loading required packages
+library(lubridate)
+if(!require(ggthemes)) 
+  install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(scales)) 
+  install.packages("scales", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(dslabs)
+library(lubridate)
+library(readr)
+
+#Downloading the data
+dl <- tempfile()
+download.file("https://github.com/kirtimay/edX_Capstone/blob/master/cyo-diabetes/diabetes.csv", dl)
+pima <- read.csv("diabetes.csv")
+head(pima) #check whether dataset downloaded properly
+
+```
+
+
+
+
+
+
+
+
+
+
+
