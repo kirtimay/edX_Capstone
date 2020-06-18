@@ -2,7 +2,7 @@
 title: "Predicting Diabetes in PIMA Women"
 subtitle: "edX Capstone Project Submission"
 author: "Kirtimay Pendse"
-date: "6/15/2020"
+date: "6/23/2020"
 output: pdf_document
 ---
 
@@ -12,6 +12,24 @@ options(digits=6)
 ```
 
 # Introduction
+
+Diabetes intro
+
+This project is part of the HarvardX: PH125.9x Data Science: Capstone course^[https://courses.edx.org/courses/course-v1:HarvardX+PH125.9x+1T2020/course/], the final course for the Data Science Professional Certificate. This project is centered around predicting the presence of diabetes in Pima Indian women using the Pima Indians Diabetes dataset. 
+
+The dataset, loaded as 'pima_diabetes', is split into a training set containing 90% of the data and a test set containing 10% of the data for validation. This report is split into four sections: first, the objective and motivation behind the project is highlighted, then exploratory data analysis is conducted, following which the modeling approach to develop the diabetes prediction algorithm is presented. Finally, the modeling results are presented along with a discussion on the algorithm's performance and its limitations.
+
+## Objective
+
+The dataset^[https://www.kaggle.com/ksp585/pima-indian-diabetes-logistic-regression-with-r] is available on Kaggle and is originally sourced from the National Institute of Diabetes and Digestive and Kidney Diseases, a part of the Department of Health and Human Services. The objective of this analysis is to diagnostically predict whether or not a patient is diabetic, based on select diagnostic measurements included in the dataset (such as BMI, Age, Blood Pressure). There are 786 individuals in the dataset, all of whom are females of at least 21 years of age, and of Pima Indian heritage.
+
+
+# Methods and Analysis
+
+## Preparing the data
+
+First, the dataset is downloaded and split into a train set and a test set. The train set is used to create the prediction algorithm, and then the algorithm is tested on the test set for a final validation.
+
 
 ```{r, data prep, echo = TRUE, message = FALSE, warning = FALSE, eval = TRUE}
 #Loading required packages
@@ -28,22 +46,44 @@ library(knitr)
 library(ggplot2)
 library(dslabs)
 library(lubridate)
+library(corrplot)
 library(readr)
 
 #Downloading the data
 dl <- tempfile()
 download.file("https://github.com/kirtimay/edX_Capstone/blob/master/cyo-diabetes/diabetes.csv", dl)
-pima <- read.csv("diabetes.csv")
-head(pima) #check whether dataset downloaded properly
-
+pima_diabetes <- read.csv("diabetes.csv", col.names=c("Pregnancies","Glucose","BP","SkinThickness","Insulin","BMI","DPF","Age","Outcome"))
+head(pima_diabetes) #check whether dataset downloaded properly
 ```
 
 
+Description of Variables:
 
+```{r vars, echo=TRUE, warning=FALSE}
+v_type <- lapply(pima_diabetes, class)
 
+```
 
+```{r edx, echo=TRUE, warning=FALSE, message = FALSE, eval = TRUE}
+set.seed(1, sample.kind="Rounding")
+test_index <- createDataPartition(y = pima_diabetes$Outcome, times = 1, p = 0.1, list = FALSE)
+train_set <- pima[-test_index,]
+test_set <- pima[test_index,]
+```
 
+## Exploratory Analysis
 
+```{r head, echo=FALSE}
+head(pima_diabetes) %>% print.data.frame() 
+```
+
+```{r sapply, echo=FALSE}
+sapply(pima_diabetes, class) 
+```
+
+```{r summary, echo=FALSE}
+summary(pima_diabetes) 
+```
 
 
 
