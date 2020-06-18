@@ -17,7 +17,7 @@ Diabetes intro
 
 This project is part of the HarvardX: PH125.9x Data Science: Capstone course^[https://courses.edx.org/courses/course-v1:HarvardX+PH125.9x+1T2020/course/], the final course for the Data Science Professional Certificate. This project is centered around predicting the presence of diabetes in Pima Indian women using the Pima Indians Diabetes dataset. 
 
-The dataset, loaded as 'pima_diabetes', is split into a training set containing 90% of the data and a test set containing 10% of the data for validation. This report is split into four sections: first, the objective and motivation behind the project is highlighted, then exploratory data analysis is conducted, following which the modeling approach to develop the diabetes prediction algorithm is presented. Finally, the modeling results are presented along with a discussion on the algorithm's performance and its limitations.
+The dataset, loaded as 'pima_diabetes', is split into a training set containing 80% of the data and a test set containing 20% of the data for validation. This report is split into four sections: first, the objective and motivation behind the project is highlighted, then exploratory data analysis is conducted, following which the modeling approach to develop the diabetes prediction algorithm is presented. Finally, the modeling results are presented along with a discussion on the algorithm's performance and its limitations.
 
 ## Objective
 
@@ -54,6 +54,9 @@ dl <- tempfile()
 download.file("https://github.com/kirtimay/edX_Capstone/blob/master/cyo-diabetes/diabetes.csv", dl)
 pima_diabetes <- read.csv("diabetes.csv", col.names=c("Pregnancies","Glucose","BP","SkinThickness","Insulin","BMI","DPF","Age","Outcome"))
 head(pima_diabetes) #check whether dataset downloaded properly
+
+#convert outcome to factor
+pima_diabetes$Outcome <- factor(pima_diabetes$Outcome)
 ```
 
 
@@ -61,12 +64,17 @@ Description of Variables:
 
 ```{r vars, echo=TRUE, warning=FALSE}
 v_type <- lapply(pima_diabetes, class)
+v_desc <- c("No. of Pregnancies", "Plasma Glucose Concentration (2 Hrs after an oral test)", "Diastolic BP (mm Hg)", "Triceps Skin Thickness (mm)", "2 Hour Serum Insulin (uU/mL)", "Body Mass Index", "Diabetes Pedigree Function (synthesis of family history)", "Age in Years", "Presence of Diabetes")
+v_name <- colnames(pima_diabetes)
+desc_table <- as_data_frame(cbind(v_name, v_type, v_desc))
+colnames(desc_table) <- c("Variable","Class","Description")
+desc_table %>% knitr::kable()
 
 ```
 
 ```{r edx, echo=TRUE, warning=FALSE, message = FALSE, eval = TRUE}
 set.seed(1, sample.kind="Rounding")
-test_index <- createDataPartition(y = pima_diabetes$Outcome, times = 1, p = 0.1, list = FALSE)
+test_index <- createDataPartition(y = pima_diabetes$Outcome, times = 1, p = 0.2, list = FALSE)
 train_set <- pima[-test_index,]
 test_set <- pima[test_index,]
 ```
@@ -77,14 +85,15 @@ test_set <- pima[test_index,]
 head(pima_diabetes) %>% print.data.frame() 
 ```
 
-```{r sapply, echo=FALSE}
-sapply(pima_diabetes, class) 
-```
-
 ```{r summary, echo=FALSE}
 summary(pima_diabetes) 
 ```
 
 
+```{r missing, echo=FALSE}
+sapply(pima_diabetes, function(x) sum(is.na(x)))
+```
 
+
+## Plots
 
