@@ -13,11 +13,12 @@ options(digits=6)
 
 # Introduction
 
-Diabetes intro
+Diabetes is a metabolic disorder defined as when one's blood glucose is too high (known as hyperglycemia) for a prolonged period of time. Glucose is an essential simple sugar widely consumed daily, and the hormone insulin helps absorbing glucose from food and transform it into energy; however, sometimes one's body doesn't make enough insulin or is unable to use it well, resulting in glucose staying in the blood stream unidgested and unable to reach the cells.^[https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes#:~:text=Diabetes%20is%20a%20disease%20that,to%20be%20used%20for%20energy]. This can cause health problems, especially diabetes.Around 9.5% -almost 30.5 million- of the United States population had diabetes in 2015 ^[Centers for Disease Control and Prevention. National diabetes statistics report, 2017. www.cdc.gov/diabetes/pdfs/data/statistics/national-diabetes-statistics-report.pdf], and factors such as being overweight, being physically inactive, having a family history are linked with higher chances of developing diabetes. Due to several factors not discussed in this paper ^[more can be found at https://care.diabetesjournals.org/content/29/8/1866], diabetes is extremely prevalent in Native Americans, most notably within the Pima tribe- since the Pima tribe is a mostly homogenous group, Pima people have been the subject of several studies of diabetes.
 
-This project is part of the HarvardX: PH125.9x Data Science: Capstone course^[https://courses.edx.org/courses/course-v1:HarvardX+PH125.9x+1T2020/course/], the final course for the Data Science Professional Certificate. This project is centered around predicting the presence of diabetes in Pima Indian women using the Pima Indians Diabetes dataset. 
+This project is the final part of the HarvardX: PH125.9x Data Science: Capstone course^[https://courses.edx.org/courses/course-v1:HarvardX+PH125.9x+1T2020/course/], the last course for the Data Science Professional Certificate. This project is centered around predicting the presence of diabetes in Pima Indian women using data on factors such as age, body mass index, blood pressure etc. compiled together in the Pima Indians Diabetes dataset. 
 
 The dataset, loaded as 'pima_diabetes', is split into a training set containing 80% of the data and a test set containing 20% of the data for validation. This report is split into four sections: first, the objective and motivation behind the project is highlighted, then exploratory data analysis is conducted, following which the modeling approach to develop the diabetes prediction algorithm is presented. Finally, the modeling results are presented along with a discussion on the algorithm's performance and its limitations.
+
 
 ## Objective
 
@@ -52,11 +53,12 @@ library(readr)
 #Downloading the data
 dl <- tempfile()
 download.file("https://github.com/kirtimay/edX_Capstone/blob/master/cyo-diabetes/diabetes.csv", dl)
-pima_diabetes <- read.csv("diabetes.csv", col.names=c("Pregnancies","Glucose","BP","SkinThickness","Insulin","BMI","DPF","Age","Outcome"))
-head(pima_diabetes) #check whether dataset downloaded properly
+pima_diabetes <- read.csv("diabetes.csv", col.names=c("pregnancies","glucose","bp","skin_thickness","insulin","bmi","dpf","age","outcome"))
 
 #convert outcome to factor
-pima_diabetes$Outcome <- factor(pima_diabetes$Outcome)
+pima_diabetes$outcome <- factor(pima_diabetes$outcome)
+
+head(pima_diabetes) #check whether dataset downloaded properly
 ```
 
 
@@ -68,26 +70,35 @@ v_desc <- c("No. of Pregnancies", "Plasma Glucose Concentration (2 Hrs after an 
 v_name <- colnames(pima_diabetes)
 desc_table <- as_data_frame(cbind(v_name, v_type, v_desc))
 colnames(desc_table) <- c("Variable","Class","Description")
-desc_table %>% knitr::kable()
-
+desc_table #%>% knitr::kable()
 ```
 
 ```{r edx, echo=TRUE, warning=FALSE, message = FALSE, eval = TRUE}
 set.seed(1, sample.kind="Rounding")
-test_index <- createDataPartition(y = pima_diabetes$Outcome, times = 1, p = 0.2, list = FALSE)
-train_set <- pima[-test_index,]
-test_set <- pima[test_index,]
+test_index <- createDataPartition(y = pima_diabetes$outcome, times = 1, p = 0.2, list = FALSE)
+train_set <- pima_diabetes[-test_index,]
+test_set <- pima_diabetes[test_index,]
 ```
 
 ## Exploratory Analysis
+
+
+text
 
 ```{r head, echo=FALSE}
 head(pima_diabetes) %>% print.data.frame() 
 ```
 
+
+text
+
+
 ```{r summary, echo=FALSE}
 summary(pima_diabetes) 
 ```
+
+
+text
 
 
 ```{r missing, echo=FALSE}
@@ -97,3 +108,178 @@ sapply(pima_diabetes, function(x) sum(is.na(x)))
 
 ## Plots
 
+
+### Outcome Variable
+
+#### Diabetes
+
+
+```{r}
+ggplot(pima_diabetes,aes(outcome)) +
+  geom_bar() + 
+  ggtitle("Distribution of Diabetic and Non-Diabetic Individuals") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("Count") +
+  geom_text(stat='count', aes(label=..count..), vjust=-0.2)
+```
+
+
+### Predictor Variables
+
+
+#### Pregnancies
+
+```{r message = FALSE, warning = FALSE}
+p1 <- ggplot(pima_diabetes, aes(x = outcome, y = pregnancies)) +
+  geom_boxplot() +
+  ggtitle("Difference in Pregnancies") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("No. of Pregnancies") 
+
+pima_diabetes_pos <- pima_diabetes %>% filter(outcome==1)
+p2 <- ggplot(pima_diabetes_pos,aes(x = pregnancies)) + 
+  geom_bar(position = "Dodge") + 
+  scale_x_continuous(limits = c(0,15)) +
+  labs(title = "No. of Pregnancies In Diabetics") +  
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("No. of Pregnancies") +
+  ylab("Count") 
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+#### Glucose
+
+```{r glucose, message = FALSE, warning = FALSE}
+p3 <- ggplot(pima_diabetes, aes(x = outcome, y=glucose)) +
+  geom_boxplot() +
+  ggtitle("Difference in Glucose Levels") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("Glucose Level") 
+
+p4 <- ggplot(pima_diabetes, aes(x = glucose, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "Glucose Level", y = "Density", title = "Density Plot of Glucose Levels")
+
+gridExtra::grid.arrange(p3, p4, ncol = 2)
+```
+
+#### Blood Pressure
+
+```{r bp, message = FALSE, warning = FALSE}
+p5 <- ggplot(pima_diabetes, aes(x = outcome, y=bp)) +
+  geom_boxplot() +
+  ggtitle("Difference in BP Level") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("Blood Pressure") 
+
+p6 <- ggplot(pima_diabetes, aes(x = bp, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "Diastolic Blood Pressure", y = "Density", title = "Density Plot of BP Levels")
+
+gridExtra::grid.arrange(p5, p6, ncol = 2)
+```
+
+#### Skin Thickness
+
+```{r skin, message = FALSE, warning = FALSE}
+p7 <- ggplot(pima_diabetes, aes(x = outcome, y=skin_thickness)) +
+  geom_boxplot() +
+  ggtitle("Difference in Skin Thickness") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("Skin Thickness") 
+
+p8 <- ggplot(pima_diabetes, aes(x = skin_thickness, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "Skin Thickness", y = "Density", title = "Density Plot of Skin Thickness")
+
+gridExtra::grid.arrange(p7, p8, ncol = 2)
+```
+
+#### Insulin
+
+```{r insulin, message = FALSE, warning = FALSE}
+p9 <- ggplot(pima_diabetes, aes(x = outcome, y=insulin)) +
+  geom_boxplot() +
+  ggtitle("Difference in Insulin Level") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("Insulin Level") 
+
+p10 <- ggplot(pima_diabetes, aes(x = insulin, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "Insulin Level", y = "Density", title = "Density Plot of Insulin Level")
+
+gridExtra::grid.arrange(p9, p10, ncol = 2)
+```
+
+#### BMI
+
+```{r bmi, message = FALSE, warning = FALSE}
+p11 <- ggplot(pima_diabetes, aes(x = outcome, y=bmi)) +
+  geom_boxplot() +
+  ggtitle("Difference in BMI") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("BMI") 
+
+p12 <- ggplot(pima_diabetes, aes(x = bmi, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "BMI", y = "Density", title = "Density Plot of BMI")
+
+gridExtra::grid.arrange(p11, p12, ncol = 2)
+```
+
+#### DPF
+
+```{r dpf, message = FALSE, warning = FALSE}
+p13 <- ggplot(pima_diabetes, aes(x = outcome, y=dpf)) +
+  geom_boxplot() +
+  ggtitle("Difference in DPF") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("DPF") 
+
+p14 <- ggplot(pima_diabetes, aes(x = dpf, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "DPF", y = "Density", title = "Density Plot of DPF")
+
+gridExtra::grid.arrange(p13, p14, ncol = 2)
+```
+
+#### Age
+
+```{r age, message = FALSE, warning = FALSE}
+p15 <- ggplot(pima_diabetes, aes(x = outcome, y=age)) +
+  geom_boxplot() +
+  ggtitle("Difference in Age") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Presence of Diabetes") +
+  ylab("Age") 
+
+p16 <- ggplot(pima_diabetes, aes(x = age, color = outcome, fill = outcome)) +
+  geom_density(alpha = 0.4) +
+  theme(legend.position = "right") +
+  labs(x = "Age", y = "Density", title = "Density Plot of Age")
+
+gridExtra::grid.arrange(p15, p16, ncol = 2)
+```
+
+### Correlation Matrix
+
+```{r corr, echo=FALSE}
+corr_mat <- round(cor(pima_diabetes[1:8]),1)
+corr_mat
+corrplot(cor(pima_diabetes[, -9]), type = "lower", method = "number")
+```
