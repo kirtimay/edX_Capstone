@@ -131,21 +131,22 @@ ggplot(pima_diabetes,aes(outcome)) +
 #### Pregnancies
 
 ```{r message = FALSE, warning = FALSE}
-p1 <- ggplot(pima_diabetes, aes(x = outcome, y = pregnancies)) +
+p1 <- ggplot(pima_diabetes, aes(x = outcome, y = pregnancies, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Pregnancies") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("No. of Pregnancies") 
+  ylab("No. of Pregnancies") +
+  theme(legend.position = "bottom") 
 
-pima_diabetes_pos <- pima_diabetes %>% filter(outcome==1)
-p2 <- ggplot(pima_diabetes_pos,aes(x = pregnancies)) + 
+p2 <- ggplot(pima_diabetes,aes(x = pregnancies, fill=outcome)) + 
   geom_bar(position = "Dodge") + 
-  scale_x_continuous(limits = c(0,15)) +
+  scale_x_continuous(limits = c(0,17)) +
   labs(title = "No. of Pregnancies In Diabetics") +  
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("No. of Pregnancies") +
-  ylab("Count") 
+  ylab("Count") +
+  theme(legend.position = "bottom") 
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)
 ```
@@ -153,16 +154,17 @@ gridExtra::grid.arrange(p1, p2, ncol = 2)
 #### Glucose
 
 ```{r glucose, message = FALSE, warning = FALSE}
-p3 <- ggplot(pima_diabetes, aes(x = outcome, y=glucose)) +
+p3 <- ggplot(pima_diabetes, aes(x = outcome, y=glucose, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Glucose Levels") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("Glucose Level") 
+  ylab("Glucose Level") +
+  theme(legend.position = "bottom") 
 
 p4 <- ggplot(pima_diabetes, aes(x = glucose, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "Glucose Level", y = "Density", title = "Density Plot of Glucose Levels")
 
 gridExtra::grid.arrange(p3, p4, ncol = 2)
@@ -171,16 +173,17 @@ gridExtra::grid.arrange(p3, p4, ncol = 2)
 #### Blood Pressure
 
 ```{r bp, message = FALSE, warning = FALSE}
-p5 <- ggplot(pima_diabetes, aes(x = outcome, y=bp)) +
+p5 <- ggplot(pima_diabetes, aes(x = outcome, y=bp, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in BP Level") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("Blood Pressure") 
+  ylab("Blood Pressure") +
+  theme(legend.position = "bottom") 
 
 p6 <- ggplot(pima_diabetes, aes(x = bp, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "Diastolic Blood Pressure", y = "Density", title = "Density Plot of BP Levels")
 
 gridExtra::grid.arrange(p5, p6, ncol = 2)
@@ -189,16 +192,17 @@ gridExtra::grid.arrange(p5, p6, ncol = 2)
 #### Skin Thickness
 
 ```{r skin, message = FALSE, warning = FALSE}
-p7 <- ggplot(pima_diabetes, aes(x = outcome, y=skin_thickness)) +
+p7 <- ggplot(pima_diabetes, aes(x = outcome, y=skin_thickness, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Skin Thickness") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("Skin Thickness") 
+  ylab("Skin Thickness") +
+  theme(legend.position = "bottom") 
 
 p8 <- ggplot(pima_diabetes, aes(x = skin_thickness, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "Skin Thickness", y = "Density", title = "Density Plot of Skin Thickness")
 
 gridExtra::grid.arrange(p7, p8, ncol = 2)
@@ -207,16 +211,17 @@ gridExtra::grid.arrange(p7, p8, ncol = 2)
 #### Insulin
 
 ```{r insulin, message = FALSE, warning = FALSE}
-p9 <- ggplot(pima_diabetes, aes(x = outcome, y=insulin)) +
+p9 <- ggplot(pima_diabetes, aes(x = outcome, y=insulin, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Insulin Level") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("Insulin Level") 
+  ylab("Insulin Level") +
+  theme(legend.position = "bottom") 
 
 p10 <- ggplot(pima_diabetes, aes(x = insulin, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "Insulin Level", y = "Density", title = "Density Plot of Insulin Level")
 
 gridExtra::grid.arrange(p9, p10, ncol = 2)
@@ -225,16 +230,17 @@ gridExtra::grid.arrange(p9, p10, ncol = 2)
 #### BMI
 
 ```{r bmi, message = FALSE, warning = FALSE}
-p11 <- ggplot(pima_diabetes, aes(x = outcome, y=bmi)) +
+p11 <- ggplot(pima_diabetes, aes(x = outcome, y=bmi, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in BMI") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("BMI") 
+  ylab("BMI") +
+  theme(legend.position = "bottom") 
 
 p12 <- ggplot(pima_diabetes, aes(x = bmi, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "BMI", y = "Density", title = "Density Plot of BMI")
 
 gridExtra::grid.arrange(p11, p12, ncol = 2)
@@ -243,16 +249,17 @@ gridExtra::grid.arrange(p11, p12, ncol = 2)
 #### DPF
 
 ```{r dpf, message = FALSE, warning = FALSE}
-p13 <- ggplot(pima_diabetes, aes(x = outcome, y=dpf)) +
+p13 <- ggplot(pima_diabetes, aes(x = outcome, y=dpf, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in DPF") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("DPF") 
+  ylab("DPF") +
+  theme(legend.position = "bottom") 
 
 p14 <- ggplot(pima_diabetes, aes(x = dpf, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "DPF", y = "Density", title = "Density Plot of DPF")
 
 gridExtra::grid.arrange(p13, p14, ncol = 2)
@@ -261,16 +268,17 @@ gridExtra::grid.arrange(p13, p14, ncol = 2)
 #### Age
 
 ```{r age, message = FALSE, warning = FALSE}
-p15 <- ggplot(pima_diabetes, aes(x = outcome, y=age)) +
+p15 <- ggplot(pima_diabetes, aes(x = outcome, y=age, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Age") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Presence of Diabetes") +
-  ylab("Age") 
+  ylab("Age") +
+  theme(legend.position = "bottom") 
 
 p16 <- ggplot(pima_diabetes, aes(x = age, color = outcome, fill = outcome)) +
   geom_density(alpha = 0.4) +
-  theme(legend.position = "right") +
+  theme(legend.position = "bottom") +
   labs(x = "Age", y = "Density", title = "Density Plot of Age")
 
 gridExtra::grid.arrange(p15, p16, ncol = 2)
