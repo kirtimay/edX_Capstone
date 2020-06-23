@@ -14,7 +14,8 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=80), tidy=TRUE)
 
 # Introduction
 
-Diabetes is a metabolic disorder defined as when one's blood glucose is too high (known as hyperglycemia) for a prolonged period of time. Glucose is an essential simple sugar widely consumed daily, and the hormone insulin helps absorbing glucose from food and transform it into energy; however, sometimes one's body doesn't make enough insulin or is unable to use it well, resulting in glucose staying in the blood stream unidgested and unable to reach the cells.^[https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes#:~:text=Diabetes%20is%20a%20disease%20that,to%20be%20used%20for%20energy]. This can cause health problems, especially diabetes.Around 9.5% -almost 30.5 million- of the United States population had diabetes in 2015 ^[Centers for Disease Control and Prevention. National diabetes statistics report, 2017. www.cdc.gov/diabetes/pdfs/data/statistics/national-diabetes-statistics-report.pdf], and factors such as being overweight, being physically inactive, having a family history are linked with higher chances of developing diabetes. Due to several factors not discussed in this paper ^[more can be found at https://care.diabetesjournals.org/content/29/8/1866], diabetes is extremely prevalent in Native Americans, most notably within the Pima tribe- since the Pima tribe is a mostly homogenous group, Pima people have been the subject of several studies of diabetes.
+
+Diabetes is a metabolic disorder defined as when one's blood glucose is too high (known as hyperglycemia) for a prolonged period of time. Glucose is an essential simple sugar widely consumed daily, and the hormone insulin helps in absorbing glucose from food and transforming it into energy; however, sometimes one's body doesn't make enough insulin or is unable to use it well, resulting in glucose staying in the bloodstream undigested and unable to reach the cells.^[https://www.niddk.nih.gov/health-information/diabetes]. This can cause health problems, especially diabetes. Around 9.5% -almost 30.5 million- of the United States population had diabetes in 2015 ^[Centers for Disease Control and Prevention. National diabetes statistics report, 2017. www.cdc.gov/diabetes/pdfs/data/statistics/national-diabetes-statistics-report.pdf], and factors such as being overweight, being physically inactive, having a family history are linked with higher chances of developing diabetes. Due to several factors not discussed in this paper ^[more can be found at https://care.diabetesjournals.org/content/29/8/1866], diabetes is extremely prevalent in Native Americans, most notably within the Pima tribe- since the Pima tribe is a mostly homogenous group, Pima people have been the subject of several studies of diabetes.
 
 This project is the final part of the HarvardX: PH125.9x Data Science: Capstone course^[https://courses.edx.org/courses/course-v1:HarvardX+PH125.9x+1T2020/course/], the last course for the Data Science Professional Certificate. This project is centered around predicting the presence of diabetes in Pima Indian women using data on factors such as age, body mass index, blood pressure etc. compiled together in the Pima Indians Diabetes dataset. 
 
@@ -23,12 +24,15 @@ The dataset, loaded as 'pima_diabetes', is split into a training set containing 
 
 ## Objective
 
+
 The dataset^[https://www.kaggle.com/ksp585/pima-indian-diabetes-logistic-regression-with-r] is available on Kaggle and is originally sourced from the National Institute of Diabetes and Digestive and Kidney Diseases, a part of the Department of Health and Human Services. The objective of this analysis is to diagnostically predict whether or not a patient is diabetic, based on select diagnostic measurements included in the dataset (such as BMI, Age, Blood Pressure). There are 786 individuals in the dataset, all of whom are females of at least 21 years of age, and of Pima Indian heritage.
 
 
 # Methods and Analysis
 
+
 ## Preparing the data
+
 
 First, the dataset is downloaded and split into a train set and a test set. The train set is used to create the prediction algorithm, and then the algorithm is tested on the test set for a final validation.
 
@@ -54,7 +58,8 @@ library(readr)
 #Downloading the data
 dl <- tempfile()
 download.file("https://github.com/kirtimay/edX_Capstone/blob/master/cyo-diabetes/diabetes.csv", dl)
-pima_diabetes <- read.csv("diabetes.csv", col.names=c("pregnancies","glucose","bp","skin_thickness","insulin","bmi","dpf","age","outcome"))
+pima_diabetes <- read.csv("diabetes.csv",
+col.names=c("pregnancies","glucose","bp","skin_thickness","insulin","bmi","dpf","age","outcome"))
 
 #convert outcome to factor
 pima_diabetes$outcome <- factor(pima_diabetes$outcome)
@@ -62,6 +67,7 @@ pima_diabetes$outcome <- factor(pima_diabetes$outcome)
 
 
 ## Description of Variables
+
 
 As seen in the table, there are 9 variables in total. The response variable is 'outcome', which is a binary variable- 1 indicates that the patient is diabetic, and 0 indicates that they are not. The other 8 variables are predictors, and their descriptions are provided below.
 
@@ -74,7 +80,7 @@ v_desc <- c("No. of Pregnancies", "Plasma Glucose Concentration (mg/dL)", "Diast
 v_name <- colnames(pima_diabetes)
 desc_table <- as_data_frame(cbind(v_name, v_type, v_desc))
 colnames(desc_table) <- c("Variable","Class","Description")
-desc_table #%>% knitr::kable()
+desc_table %>% knitr::kable()
 ```
 
 The pima_diabetes dataset was split into a training set (80% of data) and a test set (remaining 20% of data).
@@ -86,13 +92,14 @@ train_set <- pima_diabetes[-test_index,]
 test_set <- pima_diabetes[test_index,]
 ```
 
+
 ## Exploratory Analysis
 
 
 For the initial data exploration, the head() function was used to get a broad understanding of the data.
 
-```{r head, echo=FALSE}
-head(pima_diabetes) #%>% knitr::kable()
+```{r head, echo=FALSE, warning=FALSE}
+head(pima_diabetes) %>% knitr::kable()
 ```
 
 The table above shows that there seems to be a lot of variation within all the variables, and that a value of 0 for skin_thickness and insulin seems to indicate some missing data. Summary statistics were then calculated to get a better understanding of the variables.
@@ -101,20 +108,23 @@ The table above shows that there seems to be a lot of variation within all the v
 summary(pima_diabetes) #%>% knitr::kable()
 ```
 
-In the summary statistics presented above, it's observed that the mean number of pregnancies is 3.85, which seems pretty high at first glance but is consistent with previous findings on Native American pregnancy rates and statistics ^[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2909384/]. The maximum value is 17, which is significantly higher than the 75th percentile value of 6. The mean glucose level is 121 mg/dL, which is towards the high end of the normal 70 to 130 mg/dL range ^[https://www.diabetes.co.uk/diabetes_care/blood-sugar-level-ranges.html] and the mean diastolic blood pressure is 69.1, which is well within a normal range. An average skin thickness of 20.5mm is within a normal range ^[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5083983/], and an average insulin of 127.2 $\mu$U/mL is within the normal range for an oral test conducted 2 hours after administration of glucose ^[https://emedicine.medscape.com/article/2089224-overview]. Interestingly, the mean BMI value of 32 seems to be very high, as the normal range of BMI is 18 to 24, and while a value of 67.1 is extremely high (the max value), it doesn't seem to be an outlier as BMIs have been measured in three figures before. Some concern arose here as the minimum value for glucose, bp, skin_thickness, and bmi are 0, which are not possible and there maybe some missing data to address before any modeling is done ^[The minimum value for insulin is 0 as well, but in cases of Type 1 diabetes, it is possible that the human body doesn't produce any insulin at all.]. The table also shows that from the 768 women in the Pima dataset, 500 tested negative for diabetes whereas 268 did. 
+
+In the summary statistics presented above, it's observed that the mean number of pregnancies is 3.85, which seems pretty high at first glance but is consistent with previous findings on Native American pregnancy rates and statistics ^[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2909384/]. The maximum value is 17, which is significantly higher than the 75th percentile value of 6. The mean glucose level is 121 mg/dL, which is towards the high end of the normal 70 to 130 mg/dL range ^[https://www.diabetes.co.uk/diabetes_care/blood-sugar-level-ranges.html] and the mean diastolic blood pressure is 69.1, which is well within a normal range. An average skin thickness of 20.5mm is within a normal range ^[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5083983/], and an average insulin of 127.2 $\mu$U/mL is within the normal range for an oral test conducted 2 hours after administration of glucose ^[https://emedicine.medscape.com/article/2089224-overview]. Interestingly, the mean BMI value of 32 seems to be very high, as the normal range of BMI is 18 to 24, and while a value of 67.1 is extremely high (the max value), it doesn't seem to be an outlier as BMIs have been measured in three figures before. Some concern arose here as the minimum value for glucose, bp, skin_thickness, and bmi are 0, which are not possible and there maybe some missing data to address before any modeling is done. The table also shows that from the 768 women in the Pima dataset, 500 tested negative for diabetes whereas 268 tested positive. 
+
 
 ### Missing Data
 
 
 On first glance, it seems as if there isn't any missing data:
-```{r missing, echo=FALSE}
+
+```{r missing, echo=TRUE, warning=FALSE}
 sapply(pima_diabetes, function(x) sum(is.na(x))) 
 ```
 
 
-However, some missing data is coded as 0's as well. Except for 'outcome' and 'pregnancies', no variable should take a value of 0. Thus, these 0's are replaced using KNN imputation, which replaces these 0's with a value approximated by the values of points closest to it. First, the missing data rows are calculated:
+However, some missing data is coded as 0's; except for 'outcome' and 'pregnancies', no variable should take a value of 0. Thus, these 0's are replaced using KNN imputation, which replaces these 0's with a value approximated by the values of points closest to it. First, the missing data rows are calculated:
 
-```{r}
+```{r miss, warning=FALSE, echo=TRUE}
 pima_miss <- pima_diabetes[,setdiff(names(pima_diabetes), c('outcome', 'pregnancies'))]
 num_miss_features <- apply(pima_miss, 2, function(x) sum(x <= 0))
 miss_features <- names(pima_miss)[ num_miss_features > 0]
@@ -123,9 +133,10 @@ missing_rows <- apply(pima_miss, 1, function(x) sum(x <= 0) >= 1)
 sum(missing_rows)
 ```
 
+
 Then, the number of total 0's in each variable is ascertained:
 
-```{r}
+```{r pimamiss, warning=FALSE, echo=TRUE}
 pima_miss[pima_miss <= 0] <- NA
 pima_diabetes[, names(pima_miss)] <- pima_miss
 
@@ -133,26 +144,25 @@ data <- pima_diabetes
 colSums(is.na(pima_diabetes))
 ```
 
+
 There are 227 and 374 0 valeus for skin_thickness and insulin respectively, which is a large proportion, and definitely needs to be addressed before the modeling process. The knnImputation function in the DMwR package is used:
 
-```{r}
-# KNN imputation
+```{r knnimp, warning=FALSE, echo=TRUE, message=FALSE}
 if(!require(DMwR)) install.packages("DMwR", repos = "http://cran.us.r-project.org")
 library(DMwR)
 pima_diabetes[,c(-8,-9)] <- knnImputation(pima_diabetes[,c(-8,-9)], k = 5)
 ```
 
+
 To check if all 0 values were taken care of:
 
-```{r}
+```{r isna, warning=FALSE, echo=TRUE}
 colSums(is.na(pima_diabetes))
 ```
 
 
 ## Plots
 
-
-### Predictor Variables
 
 The following plots look into each of the 8 predictor variables in detail, in the order they appear in the pima_diabetes dataset.
 
@@ -180,7 +190,7 @@ p2 <- ggplot(pima_diabetes,aes(x = pregnancies, fill=outcome)) +
 gridExtra::grid.arrange(p1, p2, ncol = 2)
 ```
 
-In the box plot above, it's evident that diabetic women on average have had more pregnancies than non-diabetic women. The histogram shows that there isn't a correlation between the number of pregnancies in diabetic women.
+In the boxplot above, it's evident that diabetic women on average have had more pregnancies than non-diabetic women. The histogram shows that there isn't a correlation between the number of pregnancies in diabetic women.
 
 
 #### Glucose
@@ -202,12 +212,12 @@ p4 <- ggplot(pima_diabetes, aes(x = glucose, color = outcome, fill = outcome)) +
 gridExtra::grid.arrange(p3, p4, ncol = 2)
 ```
 
-Glucose seems to be a key differentiator in diabetic and non-diabetic women- the average glucose level in diabetic women is  ~140mg/dL, compared to ~110mg/dL in non-diabetic women. The density plot above also shows that while there is an overlap, diabetic women tend to have higher levels of glucose. Intuitively, this makes sense as diabetes is a characterized by high blood sugar levels.
+Glucose seems to be a key differentiator in diabetic and non-diabetic women- the average glucose level in diabetic women is  ~140mg/dL, compared to ~110mg/dL in non-diabetic women. The density plot above also shows that while there is an overlap, diabetic women tend to have higher levels of glucose. Intuitively, this makes sense as diabetes is characterized by high blood sugar levels.
 
 
 #### Blood Pressure
 
-```{r bp, message = FALSE, warning = FALSE}
+```{r bp, message = FALSE, warning = FALSE, echo=FALSE}
 p5 <- ggplot(pima_diabetes, aes(x = outcome, y=bp, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in BP Level") +
@@ -229,7 +239,7 @@ In the boxplot and density plot above, it can be seen that diabetic women have a
 
 #### Skin Thickness
 
-```{r skin, message = FALSE, warning = FALSE}
+```{r skin, message = FALSE, warning = FALSE, echo=FALSE}
 p7 <- ggplot(pima_diabetes, aes(x = outcome, y=skin_thickness, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Skin Thickness") +
@@ -246,12 +256,12 @@ p8 <- ggplot(pima_diabetes, aes(x = skin_thickness, color = outcome, fill = outc
 gridExtra::grid.arrange(p7, p8, ncol = 2)
 ```
 
-The plots above confirm lead to a similar inference as with the blood pressure plots, and show that diabetic women have slightly thicker skin but not significantly.
+The plots above lead to a similar inference as with the blood pressure plots, and show that diabetic women have slightly thicker skin but not significantly.
 
 
 #### Insulin
 
-```{r insulin, message = FALSE, warning = FALSE}
+```{r insulin, message = FALSE, warning = FALSE, echo=FALSE}
 p9 <- ggplot(pima_diabetes, aes(x = outcome, y=insulin, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Insulin Level") +
@@ -273,7 +283,7 @@ The boxplot above shows that diabetic women have an average insulin of  ~180 uU/
 
 #### BMI
 
-```{r bmi, message = FALSE, warning = FALSE}
+```{r bmi, message = FALSE, warning = FALSE, echo=FALSE}
 p11 <- ggplot(pima_diabetes, aes(x = outcome, y=bmi, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in BMI") +
@@ -295,7 +305,7 @@ The boxplot above shows that diabetic women tend to have a higher BMI than non-d
 
 #### DPF
 
-```{r dpf, message = FALSE, warning = FALSE}
+```{r dpf, message = FALSE, warning = FALSE, echo=FALSE}
 p13 <- ggplot(pima_diabetes, aes(x = outcome, y=dpf, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in DPF") +
@@ -318,7 +328,7 @@ The DPF plots are interesting, as one would expect family history to increase on
 
 #### Age
 
-```{r age, message = FALSE, warning = FALSE}
+```{r age, message = FALSE, warning = FALSE, echo=FALSE}
 p15 <- ggplot(pima_diabetes, aes(x = outcome, y=age, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Age") +
@@ -344,81 +354,206 @@ The plots above show that diabetic women tend to be slightly older, but this doe
 
 To see the correlations among the variables, a correlation matrix was created:
 
-```{r corr, echo=TRUE}
-corr_mat <- round(cor(pima_diabetes[1:8]),2)
-corr_mat %>% knitr::kable()
-#To better visually see the highest correlations
-corrplot(cor(pima_diabetes[, -9]), type = "lower", method = "number")
+```{r corr, echo=TRUE, warning=FALSE}
+corrplot(cor(pima_diabetes[, -9]), type = "upper", method = "number")
 ```
 
 
-By a rule of thumb, a dataset with correlations above 0.70 can expect to have multi-collinearity. While there is no value above 0.70, correlations between bmi and skin_thickness and insulin and glucose are pretty high. While no significant case of multi-collinearity is observed and a higher BMI is expected from individuals who have a high skin thickness, it's interesting to note that blood glucose is usually high in the absence of insulin and not it's presence. One reason could be that diabetic individuals may have high levels of insulin, but insulin doesn't work well and is unable to act on glucose, resulting in high levels of both.
+By a rule of thumb, a dataset with correlations above 0.70 can expect to have multicollinearity. While there is no value above 0.70, correlations between bmi and skin_thickness and insulin and glucose are pretty high. While no significant case of multi-multicollinearity is observed and a higher BMI is expected from individuals who have a high skin thickness, it's interesting to note that blood glucose is usually high in the absence of insulin and not it's presence. One reason could be that diabetic individuals may have high levels of insulin, but insulin doesn't work well and is unable to act on glucose, resulting in high levels of both.
+
 
 The pair-wise plots below show all bivariate relationships:
 
-```{r corr_pairs, echo=TRUE}
+```{r corr_pairs, echo=FALSE, warning=FALSE}
 pairs(pima_diabetes, panel = panel.smooth)
 ```
 
 
 ## Modeling
 
-The following models are built using the train set: Decision Trees, Logistic Regression, Random Forests and then SVM.
+First, a model that randomly guesses whether a patient is diabetic or not is developed. This model doesn't serve any real purpose besides being a stepping stone and providing an accuracy which will become better via the following models: logistic regression and random forests. For both models, ROC curves are made to evaluate their performance on the training set, and then both models are used on the test set to make predictions as a final validation.
 
-The models are then validated using the test set, and are evaluated using both their accuracy and sensitivity.
 
-### Decision Trees
+# Results
 
-```{r}
-library(caret)
-library(rpart)
-library(rpart.plot)
-#tree.model <- rpart(outcome~., data=train_set, method="class")
-#rpart.plot(tree.model)
-train_rpart <- train(outcome ~ .,
-                     method = "rpart",
-                     tuneGrid = data.frame(cp = seq(0.0, 0.1, len = 25)),
-                     data = train_set)
-plot(train_rpart)
-confusionMatrix(predict(train_rpart, test_set), test_set$outcome)
+
+## Guessing Randomly
+
+
+First, a baseline prediction was made by simply guessing the outcome. For each individual in the test set, the following code randomly guesses whether or not a person is diabetic by sampling from the vector (0,1):
+
+```{r guess, echo=TRUE, warning=FALSE}
+set.seed(123, sample.kind = "Rounding")
+guess <- sample(c(0,1), nrow(test_set), replace = TRUE)
+mean(guess == test_set$outcome)
 ```
 
-### Logistic Regression
+A low accuracy of 0.487 is obtained. 
 
-### Random Forest
+
+## Logistic Regression
+
+
+For the first model, the glm function is used to perform a logistic regression on 'outcome' using all the predictors. 
+
+```{r glm, echo=TRUE, warning=FALSE}
+fit_glm <- glm(outcome~.,data=train_set,family = binomial)
+summary(fit_glm)
+```
+
+
+Then, the insignificant variables (i.e. age, insulin and skin_thickness) are dropped ^[bp was also dropped as it loses significance when in a model that excluded age, insulin and skin_thickness]:
+
+```{r glm2, echo=TRUE, warning=FALSE}
+fit_glm2 <- glm(formula = outcome ~ pregnancies + glucose + bmi + dpf, 
+                family = binomial, 
+                data = train_set)
+summary(fit_glm2)
+```
+
+
+All the variables in this model are significant, and have a positive relationship with 'outcome'- this makes sense, as all these variables had higher values in diabetic women as seen in the previous exploratory analysis.
+
+
+Using this model, predictions are made on the training set:
+
+```{r predglm, echo=TRUE, warning=FALSE}
+pred_glm <- predict(fit_glm2, type="response")
+tapply(pred_glm, train_set$outcome, mean)
+```
+
+
+The average prediction for 0, or 'not diabetic' is 0.239, and the average prediction for 1, or 'diabetic' is 0.552.
+
+The Receiver Operating Characteristic curve is used to determine the accuracy of a continuous variable for predicting a binary outcome, such as the one in the pima_diabetes dataset. The curve has 2 parameters- a false positive rate, and a true positive rate. The ROCR package allows for the following ROC curve to be made. Additionally, AUC (area under the curve), a measure of the area under the ROC curve is also calculated to evaluate the accuracy of the model's prediction.
+
+
+```{r roc1, echo=FALSE, warning=FALSE, message=FALSE}
+if(!require(ROCR)) install.packages("ROCR", repos = "http://cran.us.r-project.org")
+library(ROCR)
+roc_pred <- prediction(pred_glm, train_set$outcome)
+roc_perf <- performance(roc_pred, "tpr", "fpr") 
+
+plot(roc_perf, colorize=T, print.cutoffs.at=seq(0,1,0.1), text.adj=c(-0.2,1.7))
+abline(a=0, b=1)
+
+train_auc <- round(as.numeric(performance(roc_pred,"auc")@y.values),2)
+legend(0.8,0.2,train_auc, title="auc", cex=1)
+```
+
+
+An accuracy of ~84% is reported on the train_set. It is then tested on the test_set:
+
+
+```{r rocpred, echo=TRUE, warning=FALSE}
+test_pred <- predict(fit_glm2, type="response", newdata = test_set)
+test_table <- table(test_set$outcome, test_pred >0.5)
+test_table %>% knitr::kable()
+```
 
 ```{r}
+test_accuracy <- round(sum(diag(test_table))/sum(test_table),2)
+print(test_accuracy)
+```
+
+The accuracy of this model is 0.79.
+
+
+## Random Forest
+
+The process of random forests is about growing several 'decision trees', trained on different subsets of the dataset and different variables for each 'tree'- each 'tree' takes into consideration a random subset of predictors, and classifies the outcome variable. The 'random forest' then takes into account the outcome of the 'trees' and combines them to produce a final outcome. The mtry parameter sets the number of variables used to build each 'tree'. ^[More can be found on https://towardsdatascience.com/understanding-random-forest-58381e0602d2]
+
+To select the best mtry, parameter tuning is done by plotting the OOB error (an overall sum of misclassification of negative and positive classes) against mtry values:
+
+
+```{r tunerf, echo=TRUE, warning=FALSE, message=FALSE}
 library(randomForest)
-set.seed(123, sample.kind = "Rounding")
-train_rf <- randomForest(outcome ~ ., data=train_set, importance = TRUE)
-print(train_rf)
-#confusionMatrix(predict(train_rf, test_set), test_set$outcome)
-```
-
-```{r}
-set.seed(123, sample.kind = "Rounding")
-res <- tuneRF(x = subset(train_set, select = -outcome),
+set.seed(123, sample.kind = "Rounding") 
+fit_rf_tuning <- tuneRF(x = subset(train_set, select = -outcome),
               y = train_set$outcome,
               ntreeTry = 500,
-              plot = TRUE, tunecontrol = tune.control(cross = 5))
+              plot = TRUE, 
+              tunecontrol = tune.control(cross = 5))
 ```
+
+
+The graph above shows that a mtry value of 2 gives the lowest positive misclassification error, and is therefore selected as the best value for building the random forest model.
+
+
+```{r bestrf, echo=TRUE, warning=FALSE, message=FALSE}
+set.seed(123, sample.kind = "Rounding") 
+fit_rf <- randomForest(outcome~., data = train_set, importance = TRUE, mtry = 2)
+fit_rf
+```
+
+
+The accuracy of this model is ~75%. It is then evaluated on the test_set. First, the predictions and ROC curve are done for the train_set:
+
+
+```{r test_rf1, echo=FALSE, warning=FALSE, message=FALSE}
+par(mfrow = c(1,2))
+train_rf_pred <- predict(fit_rf, train_set)
+rf_pred <- predict(fit_rf, train_set,type="prob")
+confusionMatrix(train_set$outcome, train_rf_pred)
+
+if(!require(verification)) install.packages("verification", repos = "http://cran.us.r-project.org")
+library(verification)
+roc.plot(train_set$outcome == "1", rf_pred[,2], ylab = "True Positives", xlab = "False Positives")$roc.vol
+```
+
+
+Then,  the predictions and ROC curve are done for the test_set:
+
+
+```{r test_rf2, echo=FALSE, warning=FALSE, message=FALSE}
+test_rf_pred <- predict(fit_rf, test_set)
+rf_pred2 <- predict(fit_rf, test_set,type="prob")
+confusionMatrix(test_set$outcome, test_rf_pred)
+
+roc.plot(test_set$outcome== "1", rf_pred2[,2], ylab = "True Positives", xlab = "False Positives")$roc.vol
+```
+
+
+The accuracy of the RF model is 0.799. An ROC comparison of both models on the test_set is then done:
+
+```{r compare}
+rocplot <- roc.plot(x = (test_set$outcome == "1"), 
+                     pred = cbind(test_pred, rf_pred2[,2]),
+                     main = "ROC Comparison",
+                     legend = T, leg.text = c("glm", "rf"))
+```
+
+
+The above plot shows that the random forest model is slightly preferable to the logistic regression model.
+
+
+# Conclusion
+
+
+The objective of this project was to build an algorithm that can predict if an individual is diabetic or not using data in the Pima Indians Diabetes dataset. Two models were built, one using logistic regression that subsequently drops insignificant variables, and one using random forests. The random forest model seems to be marginally better, but the two difference between the accuracy of the logistic regression model and random forests model (0.79 and 0.799 respectively) is negligible.
+
+
+## Limitations and Future Work
+
+
+As mentioned earlier, there are a couple high correlations between the predictors, which could cause some multicollinearity issues which weren't addressed in this project. Additionally, missing data (0's) were hard to detect and were replaced using KNN imputation- an alternative could've been to use mean/median values instead. Furthermore, especially in the RF model, there may be an issue of overfitting as an accuracy of 1 is reported when applying the model to the train_set.
+
+A more accurate prediction algorithm could be created using an SVM algorithm, and a classification trees model could be used in addition to random forests.
+
+
+# Appendix
+
+
+## Acknowledgments
+
+I would like to thank Prof. Irizarry and the entire edX staff (especially the discussion forums) for giving me this opportunity to pursue the Data Science Professional Certificate. COVID-19 has been a challenging time for all, and this platform and project have allowed me to use my time productively. 
+
+
+## Environment
 
 ```{r}
-set.seed(123, sample.kind = "Rounding")
-rf.model <- randomForest(outcome~., data = train_set, importance = TRUE, mtry = 2)
-rf.model
+print("Operating System:")
+version
 ```
 
 
-```{r}
-# use cross validation to choose parameter
-train_rf_2 <- train(outcome ~ .,
-                    method = "Rborist",
-                    tuneGrid = data.frame(predFixed = 2, minNode = c(3, 50)),
-                    data = train_set)
-confusionMatrix(predict(train_rf_2, test_set), test_set$outcome)
-```
-
-
-
-### SVM
