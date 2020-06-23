@@ -9,6 +9,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 options(digits=6)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=80), tidy=TRUE)
 ```
 
 # Introduction
@@ -57,21 +58,26 @@ pima_diabetes <- read.csv("diabetes.csv", col.names=c("pregnancies","glucose","b
 
 #convert outcome to factor
 pima_diabetes$outcome <- factor(pima_diabetes$outcome)
-
-head(pima_diabetes) #check whether dataset downloaded properly
 ```
 
 
-Description of Variables:
+## Description of Variables
 
-```{r vars, echo=TRUE, warning=FALSE}
+As seen in the table, there are 9 variables in total. The response variable is 'outcome', which is a binary variable- 1 indicates that the patient is diabetic, and 0 indicates that they are not. The other 8 variables are predictors, and their descriptions are provided below.
+
+It should be noted that the plasma glucose concentration was measured after a 2-hour glucose tolerance oral test, BMI is calculated as the patient's weight in kgs divided by their height in meters squared, and the DPF is a variable synthesizing family history of diabetes ^[http://www.personal.kent.edu/~mshanker/personal/Zip_files/sar_2000.pdf].
+
+
+```{r vars, echo=FALSE, warning=FALSE}
 v_type <- lapply(pima_diabetes, class)
-v_desc <- c("No. of Pregnancies", "Plasma Glucose Concentration (2 Hrs after an oral test)", "Diastolic BP (mm Hg)", "Triceps Skin Thickness (mm)", "2 Hour Serum Insulin (uU/mL)", "Body Mass Index", "Diabetes Pedigree Function (synthesis of family history)", "Age in Years", "Presence of Diabetes")
+v_desc <- c("No. of Pregnancies", "Plasma Glucose Concentration (mg/dL)", "Diastolic BP (mm Hg)", "Triceps Skin Thickness (mm)", "2 Hour Serum Insulin (uU/mL)", "Body Mass Index", "Diabetes Pedigree Function", "Age in Years", "Presence of Diabetes")
 v_name <- colnames(pima_diabetes)
 desc_table <- as_data_frame(cbind(v_name, v_type, v_desc))
 colnames(desc_table) <- c("Variable","Class","Description")
 desc_table #%>% knitr::kable()
 ```
+
+The pima_diabetes dataset was split into a training set (80% of data) and a test set (remaining 20% of data).
 
 ```{r edx, echo=TRUE, warning=FALSE, message = FALSE, eval = TRUE}
 set.seed(1, sample.kind="Rounding")
@@ -83,54 +89,77 @@ test_set <- pima_diabetes[test_index,]
 ## Exploratory Analysis
 
 
-text
+For the initial data exploration, the head() function was used to get a broad understanding of the data.
 
 ```{r head, echo=FALSE}
-head(pima_diabetes) %>% print.data.frame() 
+head(pima_diabetes) #%>% knitr::kable()
 ```
 
-
-text
-
+The table above shows that there seems to be a lot of variation within all the variables, and that a value of 0 for skin_thickness and insulin seems to indicate some missing data. Summary statistics were then calculated to get a better understanding of the variables.
 
 ```{r summary, echo=FALSE}
-summary(pima_diabetes) 
+summary(pima_diabetes) #%>% knitr::kable()
+```
+
+In the summary statistics presented above, it's observed that the mean number of pregnancies is 3.85, which seems pretty high at first glance but is consistent with previous findings on Native American pregnancy rates and statistics ^[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2909384/]. The maximum value is 17, which is significantly higher than the 75th percentile value of 6. The mean glucose level is 121 mg/dL, which is towards the high end of the normal 70 to 130 mg/dL range ^[https://www.diabetes.co.uk/diabetes_care/blood-sugar-level-ranges.html] and the mean diastolic blood pressure is 69.1, which is well within a normal range. An average skin thickness of 20.5mm is within a normal range ^[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5083983/], and an average insulin of 127.2 $\mu$U/mL is within the normal range for an oral test conducted 2 hours after administration of glucose ^[https://emedicine.medscape.com/article/2089224-overview]. Interestingly, the mean BMI value of 32 seems to be very high, as the normal range of BMI is 18 to 24, and while a value of 67.1 is extremely high (the max value), it doesn't seem to be an outlier as BMIs have been measured in three figures before. Some concern arose here as the minimum value for glucose, bp, skin_thickness, and bmi are 0, which are not possible and there maybe some missing data to address before any modeling is done ^[The minimum value for insulin is 0 as well, but in cases of Type 1 diabetes, it is possible that the human body doesn't produce any insulin at all.]. The table also shows that from the 768 women in the Pima dataset, 500 tested negative for diabetes whereas 268 did. 
+
+### Missing Data
+
+
+On first glance, it seems as if there isn't any missing data:
+```{r missing, echo=FALSE}
+sapply(pima_diabetes, function(x) sum(is.na(x))) 
 ```
 
 
-text
+However, some missing data is coded as 0's as well. Except for 'outcome' and 'pregnancies', no variable should take a value of 0. Thus, these 0's are replaced using KNN imputation, which replaces these 0's with a value approximated by the values of points closest to it. First, the missing data rows are calculated:
 
+```{r}
+pima_miss <- pima_diabetes[,setdiff(names(pima_diabetes), c('outcome', 'pregnancies'))]
+num_miss_features <- apply(pima_miss, 2, function(x) sum(x <= 0))
+miss_features <- names(pima_miss)[ num_miss_features > 0]
 
-```{r missing, echo=FALSE}
-sapply(pima_diabetes, function(x) sum(is.na(x)))
+missing_rows <- apply(pima_miss, 1, function(x) sum(x <= 0) >= 1) 
+sum(missing_rows)
+```
+
+Then, the number of total 0's in each variable is ascertained:
+
+```{r}
+pima_miss[pima_miss <= 0] <- NA
+pima_diabetes[, names(pima_miss)] <- pima_miss
+
+data <- pima_diabetes
+colSums(is.na(pima_diabetes))
+```
+
+There are 227 and 374 0 valeus for skin_thickness and insulin respectively, which is a large proportion, and definitely needs to be addressed before the modeling process. The knnImputation function in the DMwR package is used:
+
+```{r}
+# KNN imputation
+if(!require(DMwR)) install.packages("DMwR", repos = "http://cran.us.r-project.org")
+library(DMwR)
+pima_diabetes[,c(-8,-9)] <- knnImputation(pima_diabetes[,c(-8,-9)], k = 5)
+```
+
+To check if all 0 values were taken care of:
+
+```{r}
+colSums(is.na(pima_diabetes))
 ```
 
 
 ## Plots
 
 
-### Outcome Variable
-
-#### Diabetes
-
-
-```{r}
-ggplot(pima_diabetes,aes(outcome)) +
-  geom_bar() + 
-  ggtitle("Distribution of Diabetic and Non-Diabetic Individuals") +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  xlab("Presence of Diabetes") +
-  ylab("Count") +
-  geom_text(stat='count', aes(label=..count..), vjust=-0.2)
-```
-
-
 ### Predictor Variables
+
+The following plots look into each of the 8 predictor variables in detail, in the order they appear in the pima_diabetes dataset.
 
 
 #### Pregnancies
 
-```{r message = FALSE, warning = FALSE}
+```{r preg, echo=FALSE, message = FALSE, warning = FALSE}
 p1 <- ggplot(pima_diabetes, aes(x = outcome, y = pregnancies, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Pregnancies") +
@@ -151,9 +180,12 @@ p2 <- ggplot(pima_diabetes,aes(x = pregnancies, fill=outcome)) +
 gridExtra::grid.arrange(p1, p2, ncol = 2)
 ```
 
+In the box plot above, it's evident that diabetic women on average have had more pregnancies than non-diabetic women. The histogram shows that there isn't a correlation between the number of pregnancies in diabetic women.
+
+
 #### Glucose
 
-```{r glucose, message = FALSE, warning = FALSE}
+```{r glucose, echo=FALSE, message = FALSE, warning = FALSE}
 p3 <- ggplot(pima_diabetes, aes(x = outcome, y=glucose, color=outcome)) +
   geom_boxplot() +
   ggtitle("Difference in Glucose Levels") +
@@ -169,6 +201,9 @@ p4 <- ggplot(pima_diabetes, aes(x = glucose, color = outcome, fill = outcome)) +
 
 gridExtra::grid.arrange(p3, p4, ncol = 2)
 ```
+
+Glucose seems to be a key differentiator in diabetic and non-diabetic women- the average glucose level in diabetic women is  ~140mg/dL, compared to ~110mg/dL in non-diabetic women. The density plot above also shows that while there is an overlap, diabetic women tend to have higher levels of glucose. Intuitively, this makes sense as diabetes is a characterized by high blood sugar levels.
+
 
 #### Blood Pressure
 
@@ -189,6 +224,9 @@ p6 <- ggplot(pima_diabetes, aes(x = bp, color = outcome, fill = outcome)) +
 gridExtra::grid.arrange(p5, p6, ncol = 2)
 ```
 
+In the boxplot and density plot above, it can be seen that diabetic women have a very slightly higher blood pressure, but the difference doesn't seem to be very significant. 
+
+
 #### Skin Thickness
 
 ```{r skin, message = FALSE, warning = FALSE}
@@ -207,6 +245,9 @@ p8 <- ggplot(pima_diabetes, aes(x = skin_thickness, color = outcome, fill = outc
 
 gridExtra::grid.arrange(p7, p8, ncol = 2)
 ```
+
+The plots above confirm lead to a similar inference as with the blood pressure plots, and show that diabetic women have slightly thicker skin but not significantly.
+
 
 #### Insulin
 
@@ -227,6 +268,9 @@ p10 <- ggplot(pima_diabetes, aes(x = insulin, color = outcome, fill = outcome)) 
 gridExtra::grid.arrange(p9, p10, ncol = 2)
 ```
 
+The boxplot above shows that diabetic women have an average insulin of  ~180 uU/mL compared to ~110 uU/ml in non-diabetic women; the density plot also confirms that diabetic women tend to have slightly higher insulin levels.
+
+
 #### BMI
 
 ```{r bmi, message = FALSE, warning = FALSE}
@@ -245,6 +289,9 @@ p12 <- ggplot(pima_diabetes, aes(x = bmi, color = outcome, fill = outcome)) +
 
 gridExtra::grid.arrange(p11, p12, ncol = 2)
 ```
+
+The boxplot above shows that diabetic women tend to have a higher BMI than non-diabetic women; the median for non-diabetic women is 30, which is well above the normal range of 18-24, and the median for diabetic women is ~34. While there is a difference in BMI for both groups, it seems as if Pima women in general tend to have a slightly higher BMI than the national average.
+
 
 #### DPF
 
@@ -265,6 +312,10 @@ p14 <- ggplot(pima_diabetes, aes(x = dpf, color = outcome, fill = outcome)) +
 gridExtra::grid.arrange(p13, p14, ncol = 2)
 ```
 
+
+The DPF plots are interesting, as one would expect family history to increase one's chances of developing diabetes. However, the plots above show that there really isn't a significant difference.
+
+
 #### Age
 
 ```{r age, message = FALSE, warning = FALSE}
@@ -284,10 +335,90 @@ p16 <- ggplot(pima_diabetes, aes(x = age, color = outcome, fill = outcome)) +
 gridExtra::grid.arrange(p15, p16, ncol = 2)
 ```
 
+
+The plots above show that diabetic women tend to be slightly older, but this doesn't seem to be significant as it's possible that some of the younger women may develop diabetes later.
+
+
 ### Correlation Matrix
 
-```{r corr, echo=FALSE}
-corr_mat <- round(cor(pima_diabetes[1:8]),1)
-corr_mat
+
+To see the correlations among the variables, a correlation matrix was created:
+
+```{r corr, echo=TRUE}
+corr_mat <- round(cor(pima_diabetes[1:8]),2)
+corr_mat %>% knitr::kable()
+#To better visually see the highest correlations
 corrplot(cor(pima_diabetes[, -9]), type = "lower", method = "number")
 ```
+
+
+By a rule of thumb, a dataset with correlations above 0.70 can expect to have multi-collinearity. While there is no value above 0.70, correlations between bmi and skin_thickness and insulin and glucose are pretty high. While no significant case of multi-collinearity is observed and a higher BMI is expected from individuals who have a high skin thickness, it's interesting to note that blood glucose is usually high in the absence of insulin and not it's presence. One reason could be that diabetic individuals may have high levels of insulin, but insulin doesn't work well and is unable to act on glucose, resulting in high levels of both.
+
+The pair-wise plots below show all bivariate relationships:
+
+```{r corr_pairs, echo=TRUE}
+pairs(pima_diabetes, panel = panel.smooth)
+```
+
+
+## Modeling
+
+The following models are built using the train set: Decision Trees, Logistic Regression, Random Forests and then SVM.
+
+The models are then validated using the test set, and are evaluated using both their accuracy and sensitivity.
+
+### Decision Trees
+
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+#tree.model <- rpart(outcome~., data=train_set, method="class")
+#rpart.plot(tree.model)
+train_rpart <- train(outcome ~ .,
+                     method = "rpart",
+                     tuneGrid = data.frame(cp = seq(0.0, 0.1, len = 25)),
+                     data = train_set)
+plot(train_rpart)
+confusionMatrix(predict(train_rpart, test_set), test_set$outcome)
+```
+
+### Logistic Regression
+
+### Random Forest
+
+```{r}
+library(randomForest)
+set.seed(123, sample.kind = "Rounding")
+train_rf <- randomForest(outcome ~ ., data=train_set, importance = TRUE)
+print(train_rf)
+#confusionMatrix(predict(train_rf, test_set), test_set$outcome)
+```
+
+```{r}
+set.seed(123, sample.kind = "Rounding")
+res <- tuneRF(x = subset(train_set, select = -outcome),
+              y = train_set$outcome,
+              ntreeTry = 500,
+              plot = TRUE, tunecontrol = tune.control(cross = 5))
+```
+
+```{r}
+set.seed(123, sample.kind = "Rounding")
+rf.model <- randomForest(outcome~., data = train_set, importance = TRUE, mtry = 2)
+rf.model
+```
+
+
+```{r}
+# use cross validation to choose parameter
+train_rf_2 <- train(outcome ~ .,
+                    method = "Rborist",
+                    tuneGrid = data.frame(predFixed = 2, minNode = c(3, 50)),
+                    data = train_set)
+confusionMatrix(predict(train_rf_2, test_set), test_set$outcome)
+```
+
+
+
+### SVM
