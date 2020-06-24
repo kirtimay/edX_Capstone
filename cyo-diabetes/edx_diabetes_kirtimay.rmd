@@ -145,7 +145,7 @@ colSums(is.na(pima_diabetes))
 ```
 
 
-There are 227 and 374 0 valeus for skin_thickness and insulin respectively, which is a large proportion, and definitely needs to be addressed before the modeling process. The knnImputation function in the DMwR package is used:
+There are 227 and 374 0 values for skin_thickness and insulin respectively, which is a large proportion, and definitely needs to be addressed before the modeling process. The knnImputation function in the DMwR package is used:
 
 ```{r knnimp, warning=FALSE, echo=TRUE, message=FALSE}
 if(!require(DMwR)) install.packages("DMwR", repos = "http://cran.us.r-project.org")
@@ -530,7 +530,7 @@ The above plot shows that the random forest model is slightly preferable to the 
 # Conclusion
 
 
-The objective of this project was to build an algorithm that can predict if an individual is diabetic or not using data in the Pima Indians Diabetes dataset. Two models were built, one using logistic regression that subsequently drops insignificant variables, and one using random forests. The random forest model seems to be marginally better, but the two difference between the accuracy of the logistic regression model and random forests model (0.79 and 0.799 respectively) is negligible.
+The objective of this project was to build an algorithm that can predict if an individual is diabetic or not using data in the Pima Indians Diabetes dataset. Two models were built, one using logistic regression that subsequently drops insignificant variables, and one using random forests. The random forest model seems to be marginally better, but the difference between the accuracy of the logistic regression model and random forests model (0.79 and 0.799 respectively) is negligible.
 
 
 ## Limitations and Future Work
